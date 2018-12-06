@@ -1,10 +1,7 @@
 import * as React from 'react';
 import DFormInner from "./DFormInner";
-import {Field} from "./interface";
+import {Field, Ref} from "./interface";
 import deepEqual from 'deep-equal';
-import {Ref} from "./interface";
-
-// const deepEqual = require("deep-equal");
 
 export interface FormOptions {
     fields: ApiField[];
@@ -49,21 +46,26 @@ type validateFunc = (value: any, addError: addErrorFunc, api: DFormApi)
 
 export interface ApiField extends Field {
     validation?: validateFunc;
-    isRequired: boolean;
-    initialValue: any;
+    isRequired?: boolean;
+    initialValue?: any;
 }
 
 const transformFields = (apiFields: ApiField[]) => {
     const errors: object = {};
     const innerFields: object = {};
+    const innerDynamicFields: object = {};
     const initialFieldValues: object = {};
 
-
     apiFields.forEach(apiField => {
-        const {name, initialValue, type, options} = apiField;
+        const {name, initialValue, type, removable, options} = apiField;
         errors[name] = [];
-        innerFields[name] = {...apiField};
 
+        if (removable) {
+            innerDynamicFields[name] = {...apiField};
+        }
+        else {
+            innerFields[name] = {...apiField};
+        }
         if (type === "select") {
             if (options) {
                 initialFieldValues[name] = options[0];
@@ -81,7 +83,8 @@ const transformFields = (apiFields: ApiField[]) => {
     return {
         errors: errors,
         fields: innerFields,
-        fieldValues: initialFieldValues
+        fieldValues: initialFieldValues,
+        dynamicFields: innerDynamicFields,
     }
 };
 
@@ -94,7 +97,7 @@ class FormState {
     public dynamicFields: object;
 
     constructor(apiFields: ApiField[]) {
-        const {fields, errors, fieldValues} = transformFields(apiFields);
+        const {fields, errors, fieldValues, dynamicFields} = transformFields(apiFields);
 
         // TODO: make this shape of field to be from beginning
         this.fields = fields;
@@ -102,7 +105,7 @@ class FormState {
         this.errors = errors;
         this.isSubmitting = false;
         this.hasErrors = true;
-        this.dynamicFields = [];
+        this.dynamicFields = dynamicFields;
     }
 }
 
@@ -196,6 +199,10 @@ export class DForm extends React.Component<FormOptions> {
     };
 
     onInputAddClick = (key: string) => {
+        if (!key) {
+            return;
+        }
+
         const newField = {
             name: key,
             type: "text",
@@ -214,15 +221,56 @@ export class DForm extends React.Component<FormOptions> {
         })
     };
 
-    onInputRemove = (key: string) => {
-        const {dynamicFields} = this.state;
+    onInputRemove = (removeKey: string) => {
+        const {dynamicFields, fieldValues} = this.state;
 
         const nextDynamicFields = Object.keys(dynamicFields)
-            .filter((key: any) => dynamicFields[key].name !== key);
+            .reduce((clearedDyFields: Field[], key: string) => {
+                if (key !== removeKey) {
+                    clearedDyFields[key] = dynamicFields[key];
+                }
+
+                return clearedDyFields;
+            }, {});
+
+        const filteredFieldValues = Object.keys(fieldValues)
+            .reduce((clearedDyFields: Field[], key: string) => {
+                if (key !== removeKey) {
+                    clearedDyFields[key] = fieldValues[key];
+                }
+
+                return clearedDyFields;
+            }, {});
 
         this.setState({
-            dynamicFields: nextDynamicFields
+            dynamicFields: nextDynamicFields,
+            fieldValues: filteredFieldValues
         })
+    };
+
+    hasRequiredFieldNotSupplied = () => {
+        const {fieldValues, fields, errors} = this.state;
+
+        let hadErrors = false;
+        Object.keys(fields).forEach((name: string) => {
+            const {isRequired} = fields[name];
+            if (isRequired) {
+                const value = fieldValues[name];
+                if (value === undefined || value === "" || value === null) {
+                    const currErrors = errors[name];
+
+                    hadErrors = true;
+                    this.setState((prevState: FormState) => ({
+                        errors: {
+                            ...prevState.errors,
+                            [name]: [...currErrors, "Field is required !"]
+                        }
+                    }))
+                }
+            }
+        });
+
+        return hadErrors;
     };
 
     onSubmitDForm = (event: any) => {
@@ -231,24 +279,23 @@ export class DForm extends React.Component<FormOptions> {
         const {fieldValues} = this.state;
         const {submitSettings} = this.props;
 
-        if (submitSettings && submitSettings.isSubmitting) {
+        if (this.hasRequiredFieldNotSupplied() ||
+            submitSettings && submitSettings.isSubmitting) {
             return;
         }
 
-        this.props.onSubmit(fieldValues);
+        const {onSubmit} = this.props;
+
+        if (!onSubmit) {
+            console.error("please provide on submit handler to form props");
+            return;
+        }
+        onSubmit(fieldValues);
     };
 
     render() {
         const {errors, fields, fieldValues, dynamicFields} = this.state;
         const {submitSettings, forwardedRef, dynamicAddition} = this.props;
-
-        console.log("forwardedRef", forwardedRef.current);
-        if (forwardedRef.current.props) {
-            forwardedRef.current.onClick = this.onSubmitDForm;
-            const e = this.checkForErrors();
-            forwardedRef.current.disabled = e;
-            console.log("peaky", e,)
-        }
 
         return (
             <DFormInner ref={forwardedRef}

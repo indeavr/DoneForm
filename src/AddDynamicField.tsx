@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {Button, Input, Label} from "reactstrap";
+import {Glyphicon} from "react-bootstrap";
 
 interface DynamicFieldProps {
     onDynamicAdd: (key: string) => void
@@ -10,6 +11,7 @@ class DynamicFieldState {
 }
 
 class AddDynamicField extends React.Component<DynamicFieldProps, DynamicFieldState> {
+    state = new DynamicFieldState();
 
     onChange = (event: any) => {
         const {value} = event.target;
@@ -31,7 +33,7 @@ class AddDynamicField extends React.Component<DynamicFieldProps, DynamicFieldSta
                 <div style={{display: "inline-block", marginLeft: "5px"}}>
                     <Button color="success"
                             onClick={() => this.props.onDynamicAdd(this.state.key)}>
-                        {/* <Glyphicon glyph="plus-sign"/> */}
+                        <Glyphicon glyph="plus-sign"/>
                     </Button>
                 </div>
             </div>

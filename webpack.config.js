@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports = {
     mode: "production", // "production" | "development" | "none"  // Chosen mode tells webpack to use its built-in optimizations accordingly.
-    entry: path.join(__dirname, "./src/index.ts"),
+    entry: path.join(__dirname, "./build/index.js"),
     output: {
         
         // options related to how webpack emits results

@@ -33,7 +33,7 @@ class DFormInner extends React.Component<DFormProps> {
         const {fieldValues, handleInputChange, errors, onInputRemove} = this.props;
 
         return Object.keys(fields).map((name) => {
-            const {validation, isRequired, initialValue, dynamicGen, ...field} = fields[name];
+            const {validation, isRequired, initialValue, dynamicGen, removable, ...field} = fields[name];
 
             const {label, helpText, ...configProps} = field;
             const errorsForField: string[] = errors[name] || [];
@@ -48,7 +48,7 @@ class DFormInner extends React.Component<DFormProps> {
                             label={label}
                             errorsForField={errorsForField}
                             helpText={helpText}
-                            dynamicGen={dynamicGen}
+                            removable={removable || dynamicGen}
                             onInputRemove={onInputRemove}
                 >
                     <DField {...configProps}

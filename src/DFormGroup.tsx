@@ -1,13 +1,15 @@
 import * as React from 'react';
 import {Button, FormFeedback, FormGroup, FormText, Label} from "reactstrap";
+import {ReactNode} from "react";
+import {Glyphicon} from "react-bootstrap";
 
 interface DFGProps {
     name: string;
     label: string;
-    children: React.ReactNode,
+    children: ReactNode,
     errorsForField: string[],
     helpText: string;
-    dynamicGen?: boolean;
+    removable?: boolean;
     onInputRemove?: (key: string) => void;
 }
 
@@ -28,16 +30,16 @@ class DFormGroup extends React.Component<DFGProps> {
     };
 
     render() {
-        const {name, label, children, errorsForField, helpText, dynamicGen, onInputRemove} = this.props;
+        const {name, label, children, errorsForField, helpText, removable, onInputRemove} = this.props;
 
 
-        if (dynamicGen && onInputRemove) {
+        if (removable && onInputRemove) {
             return (
                 <FormGroup>
                     <div style={{display: "inline-block", margin: "0 5px"}}>
                         <Button color="danger"
                                 onClick={() => onInputRemove(name)}>
-                            {/* <Glyphicon glyph="remove-circle"/> */}
+                            <Glyphicon glyph="remove-circle"/>
                         </Button>
                     </div>
                     <div style={{display: "inline-block", width: "75%"}}>

@@ -1,3 +1,4 @@
-import {DForm} from './DForm';
+import DForm from './DForm';
+
 
 export default DForm;

@@ -6,6 +6,10 @@ export interface Field {
     placeholder?: string;
     helpText?: string;
     value?: any;
+    removable?: boolean;
+    disabled?: boolean;
 }
 
 export type Ref = HTMLDivElement;
+
+
